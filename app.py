@@ -164,11 +164,11 @@ def fmt(x, pct=False):
 # ----------------------------------------------------------------------------
 st.sidebar.title("⚙️ Données")
 
-db_path = find_local_db()
-uploaded = st.sidebar.file_uploader(
-    "Base SQLite (.db)", type=["db", "sqlite", "sqlite3"],
-    help="Facultatif si un fichier .db est déjà présent dans le dépôt.",
-)
+#db_path = find_local_db()
+#uploaded = st.sidebar.file_uploader(
+#    "Base SQLite (.db)", type=["db", "sqlite", "sqlite3"],
+  #  help="Facultatif si un fichier .db est déjà présent dans le dépôt.",
+#)
 if uploaded is not None:
     tmp = os.path.join(tempfile.gettempdir(), uploaded.name)
     with open(tmp, "wb") as f:
