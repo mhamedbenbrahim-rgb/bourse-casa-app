@@ -169,29 +169,29 @@ st.sidebar.title("⚙️ Données")
 #    "Base SQLite (.db)", type=["db", "sqlite", "sqlite3"],
   #  help="Facultatif si un fichier .db est déjà présent dans le dépôt.",
 #)
-if uploaded is not None:
-    tmp = os.path.join(tempfile.gettempdir(), uploaded.name)
-    with open(tmp, "wb") as f:
-        f.write(uploaded.getbuffer())
-    db_path = tmp
+#if uploaded is not None:
+ #   tmp = os.path.join(tempfile.gettempdir(), uploaded.name)
+#    with open(tmp, "wb") as f:
+#        f.write(uploaded.getbuffer())
+#    db_path = tmp
 
-if db_path is None:
-    st.title("📊 États financiers — Bourse de Casablanca")
-    st.info("Ajoutez `financials_cse.db` à la racine du dépôt, "
-            "ou chargez-le via la barre latérale.")
-    st.stop()
+#if db_path is None:
+ #   st.title("📊 États financiers — Bourse de Casablanca")
+ #   st.info("Ajoutez `financials_cse.db` à la racine du dépôt, "
+ #           "ou chargez-le via la barre latérale.")
+ #   st.stop()
 
-data = load_data(db_path)
-if data.empty:
-    st.error("Aucune donnée exploitable dans la table etats_financiers.")
-    st.stop()
+#data = load_data(db_path)
+#if data.empty:
+ #   st.error("Aucune donnée exploitable dans la table etats_financiers.")
+ #   st.stop()
 
-etats = [e for e in ETATS_LABELS if e in set(data["Etat"])] or \
-        sorted(data["Etat"].unique())
-etat = st.sidebar.radio(
-    "État financier", etats,
-    format_func=lambda e: ETATS_LABELS.get(e, e),
-)
+#etats = [e for e in ETATS_LABELS if e in set(data["Etat"])] or \
+ #       sorted(data["Etat"].unique())
+#etat = st.sidebar.radio(
+ #   "État financier", etats,
+#    format_func=lambda e: ETATS_LABELS.get(e, e),
+#)
 masquer_growth = st.sidebar.toggle(
     "Masquer les lignes de croissance (%)", value=True,
     help="Les variations N-1→N sont recalculées par l'application ; "
