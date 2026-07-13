@@ -192,12 +192,12 @@ etat = st.sidebar.radio(
     "État financier", etats,
     format_func=lambda e: ETATS_LABELS.get(e, e),
 )
-masquer_growth = st.sidebar.toggle(
-    "Masquer les lignes de croissance (%)", value=True,
-    help="Les variations N-1→N sont recalculées par l'application ; "
-         "les lignes « Growth » de la source sont redondantes.",
-)
-libelles_fr = st.sidebar.toggle("Libellés en français", value=True)
+#masquer_growth = st.sidebar.toggle(
+  #  "Masquer les lignes de croissance (%)", value=True,
+#    help="Les variations N-1→N sont recalculées par l'application ; "
+    #     "les lignes « Growth » de la source sont redondantes.",
+#)
+#libelles_fr = st.sidebar.toggle("Libellés en français", value=True)
 
 st.sidebar.caption(
     "Montants en **millions de MAD** (MMAD), tels que publiés par la source. "
