@@ -208,7 +208,7 @@ sub_etat = data[data["Etat"] == etat]
 #if masquer_growth:
 #    sub_etat = sub_etat[~sub_etat["est_croissance"]]
 
-lab_col = "Libelle" if libelles_fr else "Rubrique"
+#lab_col = "Libelle" if libelles_fr else "Rubrique"
 ordre = rubrique_order(sub_etat)
 label_of = dict(zip(sub_etat["Rubrique"], sub_etat[lab_col]))
 
