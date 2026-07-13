@@ -210,7 +210,7 @@ sub_etat = data[data["Etat"] == etat]
 
 #lab_col = "Libelle" if libelles_fr else "Rubrique"
 ordre = rubrique_order(sub_etat)
-label_of = dict(zip(sub_etat["Rubrique"], sub_etat[lab_col]))
+#label_of = dict(zip(sub_etat["Rubrique"], sub_etat[lab_col]))
 
 societes = sorted(data["Symbole"].unique())
 exercices = sorted(sub_etat["Exercice"].unique())
