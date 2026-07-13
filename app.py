@@ -197,7 +197,7 @@ masquer_growth = st.sidebar.toggle(
     help="Les variations N-1→N sont recalculées par l'application ; "
          "les lignes « Growth » de la source sont redondantes.",
 )
-libelles_fr = st.sidebar.toggle("Libellés en français", value=False)
+libelles_fr = st.sidebar.toggle("Libellés en français", value=True)
 
 st.sidebar.caption(
     "Montants en **millions de MAD** (MMAD), tels que publiés par la source. "
