@@ -33,51 +33,51 @@ ETATS_LABELS = {"Bilan": "🏛️ Bilan", "CPC": "📈 CPC", "Flux": "💧 Flux 
 
 # Traductions FR des rubriques les plus courantes (source Investing.com, EN)
 FR = {
- #   "Total Assets": "Total actif",
- #   "Total Liabilities": "Total passif (dettes)",
-  #  "Total Equity": "Capitaux propres",
-#    "Total Liabilities And Equity": "Total passif et capitaux propres",
- #   "Cash And Equivalents": "Trésorerie et équivalents",
-#    "Net Loans": "Créances nettes (prêts)",
-  #  "Gross Loans": "Créances brutes (prêts)",
-    #"Total Deposits": "Dépôts de la clientèle",
-  #  "Total Debt": "Dette totale",
- #   "Long-Term Debt": "Dette à long terme",
-  #  "Total Current Assets": "Actif circulant",
- #   "Total Current Liabilities": "Passif circulant",
-  #  "Total Receivables": "Créances totales",
-  #  "Inventory": "Stocks",
- #   "Net Property Plant And Equipment": "Immobilisations corporelles nettes",
-#    "Intangible Assets": "Immobilisations incorporelles",
-#    "Goodwill": "Écart d'acquisition (goodwill)",
- #   "Retained Earnings": "Report à nouveau / réserves",
-#    "Minority Interest, Total": "Intérêts minoritaires",
- #   "Total Revenues": "Chiffre d'affaires",
- #   "Cost Of Revenues": "Coût des ventes",
-#    "Gross Profit": "Marge brute",
- #   "Operating Income": "Résultat d'exploitation",
- #   "EBITDA": "EBE (EBITDA)",
-#    "EBIT": "Résultat avant intérêts et impôts (EBIT)",
-#    "Net Income": "Résultat net",
-#    "Net Income to Company": "Résultat net (part du groupe incl. minoritaires)",
- #   "Income Tax Expense": "Impôt sur les résultats",
-#    "Interest Income, Total": "Produits d'intérêts",
- #   "Interest Expense, Total": "Charges d'intérêts",
- #   "Net Interest Income": "Marge nette d'intérêt (PNB bancaire partiel)",
-#    "Provision For Loan Losses": "Coût du risque (provisions sur créances)",
-#    "Basic EPS - Continuing Operations": "BPA de base",
-#    "Diluted EPS - Continuing Operations": "BPA dilué",
-#    "Dividend Per Share": "Dividende par action",
-#    "Cash from Operations": "Flux de trésorerie d'exploitation",
-  #  "Cash from Investing": "Flux de trésorerie d'investissement",
- #   "Cash from Financing": "Flux de trésorerie de financement",
- #   "Net Change in Cash": "Variation nette de trésorerie",
-#    "Capital Expenditure": "Investissements (CAPEX)",
-   # "Levered Free Cash Flow": "Free cash-flow (après dette)",
- #   "Common & Preferred Stock Dividends Paid": "Dividendes versés",
-   # "Beginning Cash Balance": "Trésorerie d'ouverture",
-   # "Ending Cash Balance": "Trésorerie de clôture",
-#  "Total Depreciation, Depletion & Amortization": "Dotations aux amortissements",
+    "Total Assets": "Total actif",
+    "Total Liabilities": "Total passif (dettes)",
+    "Total Equity": "Capitaux propres",
+    "Total Liabilities And Equity": "Total passif et capitaux propres",
+    "Cash And Equivalents": "Trésorerie et équivalents",
+    "Net Loans": "Créances nettes (prêts)",
+    "Gross Loans": "Créances brutes (prêts)",
+    "Total Deposits": "Dépôts de la clientèle",
+    "Total Debt": "Dette totale",
+    "Long-Term Debt": "Dette à long terme",
+    "Total Current Assets": "Actif circulant",
+    "Total Current Liabilities": "Passif circulant",
+    "Total Receivables": "Créances totales",
+    "Inventory": "Stocks",
+    "Net Property Plant And Equipment": "Immobilisations corporelles nettes",
+    "Intangible Assets": "Immobilisations incorporelles",
+    "Goodwill": "Écart d'acquisition (goodwill)",
+    "Retained Earnings": "Report à nouveau / réserves",
+    "Minority Interest, Total": "Intérêts minoritaires",
+    "Total Revenues": "Chiffre d'affaires",
+    "Cost Of Revenues": "Coût des ventes",
+    "Gross Profit": "Marge brute",
+    "Operating Income": "Résultat d'exploitation",
+    "EBITDA": "EBE (EBITDA)",
+    "EBIT": "Résultat avant intérêts et impôts (EBIT)",
+    "Net Income": "Résultat net",
+    "Net Income to Company": "Résultat net (part du groupe incl. minoritaires)",
+    "Income Tax Expense": "Impôt sur les résultats",
+    "Interest Income, Total": "Produits d'intérêts",
+    "Interest Expense, Total": "Charges d'intérêts",
+    "Net Interest Income": "Marge nette d'intérêt (PNB bancaire partiel)",
+    "Provision For Loan Losses": "Coût du risque (provisions sur créances)",
+    "Basic EPS - Continuing Operations": "BPA de base",
+    "Diluted EPS - Continuing Operations": "BPA dilué",
+    "Dividend Per Share": "Dividende par action",
+    "Cash from Operations": "Flux de trésorerie d'exploitation",
+    "Cash from Investing": "Flux de trésorerie d'investissement",
+    "Cash from Financing": "Flux de trésorerie de financement",
+    "Net Change in Cash": "Variation nette de trésorerie",
+    "Capital Expenditure": "Investissements (CAPEX)",
+    "Levered Free Cash Flow": "Free cash-flow (après dette)",
+    "Common & Preferred Stock Dividends Paid": "Dividendes versés",
+    "Beginning Cash Balance": "Trésorerie d'ouverture",
+    "Ending Cash Balance": "Trésorerie de clôture",
+    "Total Depreciation, Depletion & Amortization": "Dotations aux amortissements",
 }
 
 # Rubriques proposées par défaut dans les graphiques, par état
@@ -192,12 +192,12 @@ etat = st.sidebar.radio(
     "État financier", etats,
     format_func=lambda e: ETATS_LABELS.get(e, e),
 )
-#masquer_growth = st.sidebar.toggle(
-  #  "Masquer les lignes de croissance (%)", value=True,
-#    help="Les variations N-1→N sont recalculées par l'application ; "
-    #     "les lignes « Growth » de la source sont redondantes.",
-#)
-#libelles_fr = st.sidebar.toggle("Libellés en français", value=True)
+masquer_growth = st.sidebar.toggle(
+    "Masquer les lignes de croissance (%)", value=True,
+    help="Les variations N-1→N sont recalculées par l'application ; "
+         "les lignes « Growth » de la source sont redondantes.",
+)
+libelles_fr = st.sidebar.toggle("Libellés en français", value=True)
 
 st.sidebar.caption(
     "Montants en **millions de MAD** (MMAD), tels que publiés par la source. "
@@ -205,12 +205,12 @@ st.sidebar.caption(
 )
 
 sub_etat = data[data["Etat"] == etat]
-#if masquer_growth:
-#    sub_etat = sub_etat[~sub_etat["est_croissance"]]
+if masquer_growth:
+    sub_etat = sub_etat[~sub_etat["est_croissance"]]
 
-#lab_col = "Libelle" if libelles_fr else "Rubrique"
+lab_col = "Libelle" if libelles_fr else "Rubrique"
 ordre = rubrique_order(sub_etat)
-#label_of = dict(zip(sub_etat["Rubrique"], sub_etat[lab_col]))
+label_of = dict(zip(sub_etat["Rubrique"], sub_etat[lab_col]))
 
 societes = sorted(data["Symbole"].unique())
 exercices = sorted(sub_etat["Exercice"].unique())
