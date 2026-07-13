@@ -205,8 +205,8 @@ st.sidebar.caption(
 )
 
 sub_etat = data[data["Etat"] == etat]
-if masquer_growth:
-    sub_etat = sub_etat[~sub_etat["est_croissance"]]
+#if masquer_growth:
+#    sub_etat = sub_etat[~sub_etat["est_croissance"]]
 
 lab_col = "Libelle" if libelles_fr else "Rubrique"
 ordre = rubrique_order(sub_etat)
