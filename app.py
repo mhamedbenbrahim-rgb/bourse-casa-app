@@ -291,20 +291,13 @@ with tab_fiche:
 # Onglet 2 : comparaison multi-sociétés
 # ----------------------------------------------------------------------------
 with tab_comp:
-    cc1, cc2 = st.columns([1.2, 1.8])
+    cc1, cc2, cc3 = st.columns([1, 1, 1.4])
     with cc1:
-        # rubriques ordonnées : celles par défaut d'abord
-        prios = [r for r in DEFAULTS.get(etat, []) if r in ordre]
-        reste = [r for r in ordre if r not in prios]
-        rub = st.selectbox(
-            "Grandeur à comparer", prios + reste,
-            format_func=lambda r: label_of.get(r, r), key="comp_rub",
-        )
-        mode = st.radio("Représentation", ["Barres", "Courbes"],
-                        horizontal=True, key="comp_mode")
+        soc1 = st.selectbox("Valeur 1", societes, index=0, key="comp_s1")
     with cc2:
-        socs = st.multiselect("Sociétés", societes, default=societes,
-                              key="comp_socs")
+        autres = [s for s in societes if s != soc1]
+        soc2 = st.selectbox("Valeur 2", autres, index=0, key="comp_s2")
+    with cc3:
         if len(exercices) > 1:
             plage = st.select_slider(
                 "Plage d'exercices", options=exercices,
@@ -313,52 +306,52 @@ with tab_comp:
         else:
             plage = (exercices[0], exercices[0])
 
-    is_pct = bool(sub_etat.loc[sub_etat["Rubrique"] == rub, "est_pct"].any())
-    unite = "%" if is_pct else "MMAD"
-    rub_lbl = label_of.get(rub, rub)
-
     comp = sub_etat[
-        (sub_etat["Rubrique"] == rub)
-        & (sub_etat["Symbole"].isin(socs))
+        (sub_etat["Symbole"].isin([soc1, soc2]))
         & (sub_etat["Exercice"].between(plage[0], plage[1]))
     ]
 
     if comp.empty:
         st.info("Aucune donnée pour cette sélection.")
     else:
-        kwargs = dict(
-            x="Exercice", y="Montant", color="Symbole",
-            color_discrete_sequence=PALETTE,
-            labels={"Montant": f"{rub_lbl} ({unite})", "Symbole": "Société"},
+        pivot = comp.pivot_table(
+            index="Rubrique", columns=["Exercice", "Symbole"],
+            values="Montant", aggfunc="first",
         )
-        if mode == "Barres":
-            fig = px.bar(comp, barmode="group", **kwargs)
-        else:
-            fig = px.line(comp.sort_values("Exercice"), markers=True, **kwargs)
-        fig.update_layout(xaxis=dict(type="category"), height=470,
-                          title=f"{rub_lbl} — comparaison",
-                          legend=dict(orientation="h", y=-0.22))
-        st.plotly_chart(fig, use_container_width=True)
+        # Lignes : ordre naturel de l'état ; colonnes : année puis V1 | V2
+        ordre_comp = [r for r in ordre if r in pivot.index]
+        pivot = pivot.reindex(ordre_comp)
+        annees = sorted({c[0] for c in pivot.columns})
+        cols = [(a, s) for a in annees for s in (soc1, soc2)
+                if (a, s) in pivot.columns]
+        pivot = pivot[cols]
 
-        tab = comp.pivot_table(index="Symbole", columns="Exercice",
-                               values="Montant", aggfunc="first")
+        pct_mask = (comp.drop_duplicates("Rubrique")
+                    .set_index("Rubrique")["est_pct"])
 
-        def tcam(row):
-            s = row.dropna()
-            if len(s) >= 2 and s.iloc[0] > 0 and s.iloc[-1] > 0:
-                n = int(s.index[-1]) - int(s.index[0])
-                if n > 0:
-                    return ((s.iloc[-1] / s.iloc[0]) ** (1 / n) - 1) * 100
-            return None
+        disp = pd.DataFrame(index=pivot.index)
+        for col in pivot.columns:
+            disp[col] = [fmt(v, pct=bool(pct_mask.get(r, False)))
+                         for r, v in pivot[col].items()]
+        disp.columns = pd.MultiIndex.from_tuples(
+            [(str(a), s) for a, s in disp.columns],
+            names=["Exercice", "Société"],
+        )
+        disp.index = [label_of.get(r, r) for r in disp.index]
+        disp.index.name = f"Rubrique — {etat} (MMAD)"
 
-        disp = pd.DataFrame(index=tab.index)
-        for col in tab.columns:
-            disp[str(col)] = [fmt(v, pct=is_pct) for v in tab[col]]
-        if not is_pct:
-            disp["TCAM (%)"] = [fmt(tcam(tab.loc[i]), pct=True)
-                                for i in tab.index]
-        disp.index.name = f"Société — {rub_lbl} ({unite})"
-        st.dataframe(disp, use_container_width=True)
+        st.dataframe(disp, use_container_width=True,
+                     height=min(640, 80 + 35 * len(disp)))
+
+        csv = pivot.copy()
+        csv.columns = [f"{a}_{s}" for a, s in csv.columns]
+        csv.index = disp.index
+        st.download_button(
+            "⬇️ Exporter la comparaison (CSV)",
+            csv.to_csv().encode("utf-8-sig"),
+            file_name=f"comparaison_{soc1}_vs_{soc2}_{etat}.csv",
+            mime="text/csv",
+        )
 
 st.caption(
     "Source : pipeline de collecte Investing.com → SQLite (`financials_cse.db`). "
