@@ -347,7 +347,7 @@ with tab_comp:
         )
 
 st.caption(
-    "Source : pipeline de collecte Investing.com → SQLite (`financials_cse.db`). "
+    "Source : pipeline de collecte Investing.com "
     "Montants en millions de MAD tels que publiés ; libellés d'origine en anglais, "
     "traduction française indicative."
 )
