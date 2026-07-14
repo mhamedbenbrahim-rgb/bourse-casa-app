@@ -291,29 +291,22 @@ with tab_fiche:
 # Onglet 2 : comparaison multi-sociétés
 # ----------------------------------------------------------------------------
 with tab_comp:
-    cc1, cc2, cc3 = st.columns([1, 1, 1.4])
+    cc1, cc2 = st.columns(2)
     with cc1:
         soc1 = st.selectbox("Valeur 1", societes, index=0, key="comp_s1")
     with cc2:
         autres = [s for s in societes if s != soc1]
         soc2 = st.selectbox("Valeur 2", autres, index=0, key="comp_s2")
-    with cc3:
-        if len(exercices) > 1:
-            plage = st.select_slider(
-                "Plage d'exercices", options=exercices,
-                value=(exercices[0], exercices[-1]), key="comp_plage",
-            )
-        else:
-            plage = (exercices[0], exercices[0])
 
-    comp = sub_etat[
-        (sub_etat["Symbole"].isin([soc1, soc2]))
-        & (sub_etat["Exercice"].between(plage[0], plage[1]))
-    ]
+    comp = sub_etat[sub_etat["Symbole"].isin([soc1, soc2])]
 
     if comp.empty:
         st.info("Aucune donnée pour cette sélection.")
     else:
+        st.markdown(
+            f"**{soc1} vs {soc2}** — {ETATS_LABELS.get(etat, etat)} complet, "
+            f"année par année ({min(exercices)}–{max(exercices)})"
+        )
         pivot = comp.pivot_table(
             index="Rubrique", columns=["Exercice", "Symbole"],
             values="Montant", aggfunc="first",
