@@ -1,9 +1,11 @@
-name: Keep-alive Streamlit
+﻿name: Keep-alive Streamlit
+
 
 on:
   schedule:
     - cron: "0 */4 * * *"   # toutes les 4 heures, 7j/7
   workflow_dispatch:         # lancement manuel possible
+
 
 jobs:
   ping:
@@ -12,7 +14,7 @@ jobs:
       - name: Visiter l'application
         run: |
           # ⚠️ Remplacez l'URL ci-dessous par celle de votre app Streamlit
-          URL="https://VOTRE-APP.streamlit.app"
+          URL="https://bourse-casa-app-r2acvezsooulvu4qxuvsem.streamlit.app"
           code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 60 "$URL")
           echo "Ping $URL -> HTTP $code"
           if [ "$code" -ge 500 ]; then
