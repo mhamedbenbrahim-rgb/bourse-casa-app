@@ -13,9 +13,13 @@ ce qui permet de l'utiliser aussi bien pour la récupération de
 l'historique complet (première exécution) que pour le contrôle
 quotidien d'un nouveau tableau (exécutions suivantes).
 
-Base : opcvm.db
-- table `performances_opcvm` : une ligne par fonds et par date (AN, VL,
-  performances glissantes, caractéristiques du fonds).
+Base : opcvm.db (schéma normalisé pour rester compacte sur des dizaines
+de milliers de lignes historiques) :
+- table `fonds` : une ligne par OPCVM (code_isin), caractéristiques
+  quasi-statiques (nom, société de gestion, classification, frais…),
+  mises à jour avec la fiche la plus récente rencontrée.
+- table `performances_opcvm` : une ligne par fonds et par date, AN/VL et
+  performances glissantes uniquement (pas de texte dupliqué).
 - table `rapports_traites` : journal des tableaux déjà téléchargés
   (permet de savoir ce qui a déjà été traité et d'éviter les
   retéléchargements).
@@ -74,6 +78,20 @@ COLUMN_MAP = {
     "5 ans": "perf_5a",
 }
 
+# Caractéristiques du fonds (quasi statiques) -> table `fonds`
+FUND_COLUMNS = [
+    "code_maroclear", "opcvm", "societe_gestion", "nature_juridique",
+    "classification", "sensibilite", "indice_benchmark", "periodicite_vl",
+    "souscripteurs", "affectation_resultats", "commission_souscription",
+    "commission_rachat", "frais_gestion", "depositaire", "reseau_placeur",
+]
+
+# Série numérique quotidienne -> table `performances_opcvm`. Les performances
+# glissantes publiées par l'ASFIM (YTD, 1 mois, 1 an…) ne sont pas stockées :
+# elles sont redondantes avec l'historique VL, à partir duquel l'application
+# recalcule la performance sur n'importe quelle période choisie.
+PERF_COLUMNS = ["an", "vl"]
+
 NUMERIC_COLUMNS = {
     "commission_souscription", "commission_rachat", "frais_gestion",
     "an", "vl", "ytd", "perf_1j", "perf_1s", "perf_1m", "perf_3m",
@@ -81,10 +99,8 @@ NUMERIC_COLUMNS = {
 }
 
 SCHEMA = """
-CREATE TABLE IF NOT EXISTS performances_opcvm (
-    date                    TEXT NOT NULL,
-    is_hebdo                INTEGER NOT NULL,
-    code_isin               TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS fonds (
+    code_isin               TEXT PRIMARY KEY,
     code_maroclear          TEXT,
     opcvm                   TEXT,
     societe_gestion         TEXT,
@@ -100,23 +116,17 @@ CREATE TABLE IF NOT EXISTS performances_opcvm (
     frais_gestion           REAL,
     depositaire             TEXT,
     reseau_placeur          TEXT,
-    an                      REAL,
-    vl                      REAL,
-    ytd                     REAL,
-    perf_1j                 REAL,
-    perf_1s                 REAL,
-    perf_1m                 REAL,
-    perf_3m                 REAL,
-    perf_6m                 REAL,
-    perf_1a                 REAL,
-    perf_2a                 REAL,
-    perf_3a                 REAL,
-    perf_5a                 REAL,
-    PRIMARY KEY (date, code_isin)
+    maj_le                  TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_perf_opcvm_isin ON performances_opcvm(code_isin);
-CREATE INDEX IF NOT EXISTS idx_perf_opcvm_date ON performances_opcvm(date);
+CREATE TABLE IF NOT EXISTS performances_opcvm (
+    date         TEXT NOT NULL,
+    is_hebdo     INTEGER NOT NULL,
+    code_isin    TEXT NOT NULL REFERENCES fonds(code_isin),
+    an           REAL,
+    vl           REAL,
+    PRIMARY KEY (date, code_isin)
+);
 
 CREATE TABLE IF NOT EXISTS rapports_traites (
     date         TEXT PRIMARY KEY,
@@ -216,17 +226,29 @@ def already_processed_dates(con: sqlite3.Connection) -> set[str]:
 
 
 def upsert_report(con: sqlite3.Connection, rapport: Rapport, records: list[dict]) -> None:
-    columns = list(COLUMN_MAP.values())
-    placeholders = ", ".join("?" for _ in columns)
-    col_list = ", ".join(columns)
-    sql = (
-        f"INSERT OR REPLACE INTO performances_opcvm "
-        f"(date, is_hebdo, {col_list}) VALUES (?, ?, {placeholders})"
+    for rec in records:
+        isin = rec["code_isin"]
+        existing = con.execute(
+            "SELECT maj_le FROM fonds WHERE code_isin = ?", (isin,)
+        ).fetchone()
+        if existing is None or existing[0] is None or existing[0] <= rapport.date:
+            con.execute(
+                f"INSERT OR REPLACE INTO fonds (code_isin, {', '.join(FUND_COLUMNS)}, maj_le) "
+                f"VALUES (?, {', '.join('?' for _ in FUND_COLUMNS)}, ?)",
+                (isin, *[rec.get(c) for c in FUND_COLUMNS], rapport.date),
+            )
+
+    perf_col_list = ", ".join(PERF_COLUMNS)
+    perf_placeholders = ", ".join("?" for _ in PERF_COLUMNS)
+    con.executemany(
+        f"INSERT OR REPLACE INTO performances_opcvm (date, is_hebdo, code_isin, {perf_col_list}) "
+        f"VALUES (?, ?, ?, {perf_placeholders})",
+        [
+            (rapport.date, int(rapport.is_hebdo), rec["code_isin"],
+             *[rec.get(c) for c in PERF_COLUMNS])
+            for rec in records
+        ],
     )
-    con.executemany(sql, [
-        (rapport.date, int(rapport.is_hebdo), *[rec.get(c) for c in columns])
-        for rec in records
-    ])
     con.execute(
         "INSERT OR REPLACE INTO rapports_traites "
         "(date, is_hebdo, api_id, nb_lignes, traite_le) VALUES (?, ?, ?, ?, datetime('now'))",

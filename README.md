@@ -82,11 +82,10 @@ depuis l'historique disponible.
 - `opcvm_scraper.py` : interroge l'API publique utilisée par le site
   ASFIM (`fundshare.asfim.ma`) pour lister tous les tableaux publiés,
   télécharge le fichier Excel de chaque tableau non encore intégré et
-  écrit les lignes (une par fonds et par date) dans `opcvm.db`
-  (table `performances_opcvm`). Un journal (`rapports_traites`) évite de
-  retélécharger un tableau déjà traité — le script peut donc être relancé
-  tel quel aussi bien pour la récupération initiale de l'historique que
-  pour le contrôle quotidien d'un nouveau tableau.
+  écrit les données dans `opcvm.db`. Un journal (`rapports_traites`)
+  évite de retélécharger un tableau déjà traité — le script peut donc
+  être relancé tel quel aussi bien pour la récupération initiale de
+  l'historique que pour le contrôle quotidien d'un nouveau tableau.
 
   ```bash
   pip install requests openpyxl
@@ -98,14 +97,20 @@ depuis l'historique disponible.
   (20h UTC) et pousse `opcvm.db` s'il y a du nouveau, sur le même
   principe que `update_ohlc.yml` pour les cours OHLC.
 
-Schéma de `performances_opcvm` : `date`, `is_hebdo`, `code_isin`,
-`code_maroclear`, `opcvm` (nom du fonds), `societe_gestion`,
-`nature_juridique`, `classification`, `sensibilite`, `indice_benchmark`,
-`periodicite_vl`, `souscripteurs`, `affectation_resultats`,
-`commission_souscription`, `commission_rachat`, `frais_gestion`,
-`depositaire`, `reseau_placeur`, `an`, `vl`, `ytd`, et les performances
-glissantes (`perf_1j`, `perf_1s`, `perf_1m`, `perf_3m`, `perf_6m`,
-`perf_1a`, `perf_2a`, `perf_3a`, `perf_5a`).
+Schéma (normalisé pour rester compact malgré l'historique quotidien) :
+- `fonds` : une ligne par OPCVM (`code_isin`), caractéristiques
+  quasi-statiques — `opcvm` (nom), `societe_gestion`, `nature_juridique`,
+  `classification`, `sensibilite`, `indice_benchmark`, `periodicite_vl`,
+  `souscripteurs`, `affectation_resultats`, `commission_souscription`,
+  `commission_rachat`, `frais_gestion`, `depositaire`, `reseau_placeur`.
+- `performances_opcvm` : une ligne par fonds et par date — `date`,
+  `is_hebdo`, `code_isin`, `an` (actif net), `vl` (valeur liquidative).
+  Les performances glissantes publiées par l'ASFIM (YTD, 1 mois, 1 an…)
+  ne sont volontairement pas stockées : elles seraient redondantes avec
+  l'historique VL, à partir duquel l'application recalcule la
+  performance sur n'importe quelle période choisie par l'utilisateur.
 
-> Cette base est prête à être exploitée par une application (historique
-> AN/VL par fonds, comparaison, etc.) — à connecter dans un second temps.
+L'onglet **📈 OPCVM (AN / VL)** de `app.py` exploite cette base : filtres
+par classification et par périodicité VL, sélection de plusieurs fonds,
+calcul de la performance sur une période libre, tri croissant/décroissant
+et export CSV.

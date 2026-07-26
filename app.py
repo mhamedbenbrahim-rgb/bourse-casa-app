@@ -362,8 +362,10 @@ def render_financials():
 def load_opcvm_data(path: str) -> pd.DataFrame:
     con = sqlite3.connect(path)
     df = pd.read_sql_query(
-        f'SELECT date, code_isin, opcvm, societe_gestion, classification, '
-        f'periodicite_vl, an, vl FROM "{OPCVM_TABLE}" WHERE vl IS NOT NULL',
+        f'SELECT p.date, p.code_isin, f.opcvm, f.societe_gestion, f.classification, '
+        f'f.periodicite_vl, p.an, p.vl '
+        f'FROM "{OPCVM_TABLE}" p JOIN fonds f ON f.code_isin = p.code_isin '
+        f'WHERE p.vl IS NOT NULL',
         con,
     )
     con.close()
@@ -487,17 +489,31 @@ def render_opcvm():
         st.info("Aucune donnée disponible pour cette sélection et cette période.")
         st.stop()
 
+    for col in ("VL début", "VL fin", "Performance (%)"):
+        resultats[col] = pd.to_numeric(resultats[col], errors="coerce")
+
     resultats = resultats.sort_values(
         "Performance (%)", ascending=(ordre == "Croissante"), na_position="last",
     ).reset_index(drop=True)
 
+    def _fmt_date(d):
+        return d.isoformat() if d else "—"
+
+    def _fmt_num(x, signe=False):
+        if pd.isna(x):
+            return "—"
+        return f"{x:+,.2f}" if signe else f"{x:,.2f}"
+
+    disp = resultats.copy()
+    disp["Date début"] = disp["Date début"].map(_fmt_date)
+    disp["Date fin"] = disp["Date fin"].map(_fmt_date)
+    disp["VL début"] = disp["VL début"].map(_fmt_num)
+    disp["VL fin"] = disp["VL fin"].map(_fmt_num)
+    disp["Performance (%)"] = disp["Performance (%)"].map(lambda x: _fmt_num(x, signe=True))
+
     st.dataframe(
-        resultats.style.format(
-            {"VL début": "{:,.2f}", "VL fin": "{:,.2f}", "Performance (%)": "{:+.2f}"},
-            na_rep="—",
-        ),
-        use_container_width=True,
-        height=min(600, 60 + 35 * len(resultats)),
+        disp, use_container_width=True,
+        height=min(600, 60 + 35 * len(disp)),
     )
 
     st.download_button(
