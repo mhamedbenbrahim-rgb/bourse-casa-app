@@ -373,13 +373,13 @@ def load_opcvm_data(path: str) -> pd.DataFrame:
     return df
 
 
-def vl_a_la_date(sous_fonds: pd.DataFrame, cible):
-    """Dernière VL connue à la date cible ou avant (asof)."""
+def valeurs_a_la_date(sous_fonds: pd.DataFrame, cible):
+    """Dernières AN/VL connues à la date cible ou avant (asof)."""
     avant = sous_fonds[sous_fonds["date"] <= pd.Timestamp(cible)]
     if avant.empty:
-        return None, None
+        return None, None, None
     ligne = avant.iloc[-1]
-    return ligne["date"].date(), ligne["vl"]
+    return ligne["date"].date(), ligne["an"], ligne["vl"]
 
 
 def render_opcvm():
@@ -468,8 +468,8 @@ def render_opcvm():
         sf = sous[sous["code_isin"] == isin]
         if sf.empty:
             continue
-        d0, vl0 = vl_a_la_date(sf, date_debut)
-        d1, vl1 = vl_a_la_date(sf, date_fin)
+        d0, an0, vl0 = valeurs_a_la_date(sf, date_debut)
+        d1, an1, vl1 = valeurs_a_la_date(sf, date_fin)
         perf = (vl1 / vl0 - 1) * 100 if vl0 and vl1 else None
         fiche = derniere_fiche.loc[isin]
         lignes.append({
@@ -478,8 +478,10 @@ def render_opcvm():
             "Classification": fiche["classification"],
             "Périodicité VL": fiche["periodicite_vl"],
             "Date début": d0,
+            "AN début": an0,
             "VL début": vl0,
             "Date fin": d1,
+            "AN fin": an1,
             "VL fin": vl1,
             "Performance (%)": perf,
         })
@@ -489,7 +491,7 @@ def render_opcvm():
         st.info("Aucune donnée disponible pour cette sélection et cette période.")
         st.stop()
 
-    for col in ("VL début", "VL fin", "Performance (%)"):
+    for col in ("AN début", "VL début", "AN fin", "VL fin", "Performance (%)"):
         resultats[col] = pd.to_numeric(resultats[col], errors="coerce")
 
     resultats = resultats.sort_values(
@@ -499,14 +501,16 @@ def render_opcvm():
     def _fmt_date(d):
         return d.isoformat() if d else "—"
 
-    def _fmt_num(x, signe=False):
+    def _fmt_num(x, signe=False, decimales=2):
         if pd.isna(x):
             return "—"
-        return f"{x:+,.2f}" if signe else f"{x:,.2f}"
+        return f"{x:+,.{decimales}f}" if signe else f"{x:,.{decimales}f}"
 
     disp = resultats.copy()
     disp["Date début"] = disp["Date début"].map(_fmt_date)
     disp["Date fin"] = disp["Date fin"].map(_fmt_date)
+    disp["AN début"] = disp["AN début"].map(lambda x: _fmt_num(x, decimales=0))
+    disp["AN fin"] = disp["AN fin"].map(lambda x: _fmt_num(x, decimales=0))
     disp["VL début"] = disp["VL début"].map(_fmt_num)
     disp["VL fin"] = disp["VL fin"].map(_fmt_num)
     disp["Performance (%)"] = disp["Performance (%)"].map(lambda x: _fmt_num(x, signe=True))
