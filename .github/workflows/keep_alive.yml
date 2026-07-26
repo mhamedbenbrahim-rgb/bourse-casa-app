@@ -15,7 +15,13 @@ jobs:
         run: |
           # ⚠️ Remplacez l'URL ci-dessous par celle de votre app Streamlit
           URL="https://bourse-casa-app-r2acvezsooulvu4qxuvsem.streamlit.app/"
-          code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 60 "$URL")
+          # Quand l'app est endormie, Streamlit Cloud répond par une redirection
+          # 303 qui boucle sur elle-même tant qu'aucun cookie de session n'est
+          # conservé : curl seul (sans -c/-b) tombe alors en erreur 47 ("too
+          # many redirects"). On garde donc les cookies entre les redirections.
+          cookie_jar=$(mktemp)
+          code=$(curl -s -o /dev/null -w "%{http_code}" -L --max-redirs 20 \
+            --max-time 60 -c "$cookie_jar" -b "$cookie_jar" "$URL")
           echo "Ping $URL -> HTTP $code"
           if [ "$code" -ge 500 ]; then
             echo "L'application semble indisponible" && exit 1
