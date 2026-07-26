@@ -70,3 +70,42 @@ L'application est adaptée au schéma de `financials_cse.db` (table
 
 Les nouvelles sociétés ajoutées par le pipeline de scraping apparaissent
 automatiquement — il suffit de pousser la base mise à jour sur GitHub.
+
+## Données OPCVM (ASFIM) — `opcvm.db`
+
+En complément des états financiers, le dépôt collecte les **tableaux de
+performances des OPCVM marocains** publiés par l'ASFIM
+(https://asfim.ma/publications/tableaux-des-performances/), avec l'Actif
+Net (AN) et la Valeur Liquidative (VL) de chaque fonds, jour par jour et
+depuis l'historique disponible.
+
+- `opcvm_scraper.py` : interroge l'API publique utilisée par le site
+  ASFIM (`fundshare.asfim.ma`) pour lister tous les tableaux publiés,
+  télécharge le fichier Excel de chaque tableau non encore intégré et
+  écrit les lignes (une par fonds et par date) dans `opcvm.db`
+  (table `performances_opcvm`). Un journal (`rapports_traites`) évite de
+  retélécharger un tableau déjà traité — le script peut donc être relancé
+  tel quel aussi bien pour la récupération initiale de l'historique que
+  pour le contrôle quotidien d'un nouveau tableau.
+
+  ```bash
+  pip install requests openpyxl
+  python opcvm_scraper.py --db opcvm.db          # ne traite que les tableaux manquants
+  python opcvm_scraper.py --db opcvm.db --max-new 20   # limiter un essai
+  ```
+
+- `.github/workflows/update_opcvm.yml` : exécute ce script chaque jour
+  (20h UTC) et pousse `opcvm.db` s'il y a du nouveau, sur le même
+  principe que `update_ohlc.yml` pour les cours OHLC.
+
+Schéma de `performances_opcvm` : `date`, `is_hebdo`, `code_isin`,
+`code_maroclear`, `opcvm` (nom du fonds), `societe_gestion`,
+`nature_juridique`, `classification`, `sensibilite`, `indice_benchmark`,
+`periodicite_vl`, `souscripteurs`, `affectation_resultats`,
+`commission_souscription`, `commission_rachat`, `frais_gestion`,
+`depositaire`, `reseau_placeur`, `an`, `vl`, `ytd`, et les performances
+glissantes (`perf_1j`, `perf_1s`, `perf_1m`, `perf_3m`, `perf_6m`,
+`perf_1a`, `perf_2a`, `perf_3a`, `perf_5a`).
+
+> Cette base est prête à être exploitée par une application (historique
+> AN/VL par fonds, comparaison, etc.) — à connecter dans un second temps.
