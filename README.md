@@ -114,3 +114,63 @@ L'onglet **📈 OPCVM (AN / VL)** de `app.py` exploite cette base : filtres
 par classification et par périodicité VL, sélection de plusieurs fonds,
 calcul de la performance sur une période libre, tri croissant/décroissant
 et export CSV.
+
+## Données émetteurs (AMMC) — `ammc.db`
+
+Le dépôt collecte également l'annuaire des émetteurs et leurs états
+financiers réglementaires publiés par l'**AMMC**
+(https://www.ammc.ma/fr/espace-emetteurs), en complément des états
+financiers Investing.com et des OPCVM ASFIM.
+
+Contrairement à ASFIM, le site AMMC n'a pas d'API : les listes sont des
+tableaux HTML paginés et chaque document financier est un **PDF**
+(souvent un rapport annuel complet de plusieurs dizaines de pages, mise
+en page libre par émetteur). `ammc_scraper.py` travaille donc en trois
+étapes indépendantes et reprises (`--step`) :
+
+```bash
+pip install requests beautifulsoup4 lxml pdfplumber
+python ammc_scraper.py --db ammc.db --step emetteurs             # annuaire + fiches
+python ammc_scraper.py --db ammc.db --step documents              # catalogue des documents
+python ammc_scraper.py --db ammc.db --step extraire --max-new 20  # téléchargement + extraction
+```
+
+- **emetteurs** : parcourt `/fr/espace-emetteurs/liste-des-emetteurs`
+  (nom, secteur d'activité, date d'introduction en bourse) et, avec
+  `--with-details`, la fiche « Caractéristiques » de chaque émetteur
+  (compartiment, commissaires aux comptes, actionnariat...).
+- **documents** : parcourt le catalogue complet
+  `/fr/liste-etats-financiers-emetteurs` (émetteur, année, type de
+  rapport) et journalise chaque document dans la table `documents`
+  (statut `a_traiter`). Ce catalogue représente **plusieurs milliers de
+  documents** — la commande ne fait qu'un inventaire, elle ne télécharge
+  rien.
+- **extraire** : pour les documents `a_traiter`, résout le lien PDF
+  réel, le télécharge (avec reprise — les gros rapports coupent souvent
+  en cours de route), puis tente d'en extraire les rubriques Bilan /
+  CPC / ESG par repérage des intitulés du plan comptable marocain
+  (CGNC) et extraction de tableaux. C'est un **best effort** : les
+  rapports sont mis en page librement par chaque émetteur, donc
+  l'extraction ne fonctionne pas à tous les coups. Les documents où
+  aucun tableau exploitable n'a été trouvé sont journalisés dans
+  `documents_non_extraits` plutôt que de produire des chiffres
+  incertains ; les PDF ne sont pas conservés sur disque après
+  traitement (plusieurs Mo chacun).
+
+Schéma :
+- `emetteurs` : une ligne par émetteur (`id_ammc`), nom, secteur, date
+  d'introduction en bourse.
+- `emetteurs_details` : paires clé/valeur de la fiche « Caractéristiques »
+  (compartiment, commissaires aux comptes, actionnariat...).
+- `documents` : catalogue des documents financiers publiés (émetteur,
+  année, type de rapport, lien PDF résolu, statut).
+- `etats_financiers_ammc` : rubriques extraites des PDF (`etat`,
+  `rubrique`, `valeur`, `valeur_num`, page source).
+- `documents_non_extraits` : journal des documents pour lesquels
+  l'extraction automatique a échoué (à traiter manuellement si besoin).
+
+Étant donné le volume (~6000 documents, plusieurs dizaines de Go de
+PDF), ce script est prévu pour être **relancé plusieurs fois** avec
+`--max-new`, pas pour tout collecter en un seul run. Aucune
+automatisation GitHub Actions n'est mise en place pour l'instant —
+lancement manuel uniquement.
