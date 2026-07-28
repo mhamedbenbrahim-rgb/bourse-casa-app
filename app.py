@@ -363,7 +363,7 @@ def load_opcvm_data(path: str) -> pd.DataFrame:
     con = sqlite3.connect(path)
     df = pd.read_sql_query(
         f'SELECT p.date, p.code_isin, f.opcvm, f.societe_gestion, f.classification, '
-        f'f.periodicite_vl, p.an, p.vl '
+        f'f.periodicite_vl, f.affectation_resultats, p.an, p.vl '
         f'FROM "{OPCVM_TABLE}" p JOIN fonds f ON f.code_isin = p.code_isin '
         f'WHERE p.vl IS NOT NULL',
         con,
@@ -410,9 +410,15 @@ def render_opcvm():
         "Périodicité VL", periodicites, default=periodicites,
     )
 
+    affectations = sorted(derniere_fiche["affectation_resultats"].dropna().unique())
+    sel_affectations = st.sidebar.multiselect(
+        "Affectation des résultats", affectations, default=affectations,
+    )
+
     fonds_filtres = derniere_fiche[
         derniere_fiche["classification"].isin(sel_classifications)
         & derniere_fiche["periodicite_vl"].isin(sel_periodicites)
+        & derniere_fiche["affectation_resultats"].isin(sel_affectations)
     ]
     st.sidebar.caption(f"{len(fonds_filtres)} OPCVM correspondent aux filtres.")
 
@@ -477,6 +483,7 @@ def render_opcvm():
             "Société de gestion": fiche["societe_gestion"],
             "Classification": fiche["classification"],
             "Périodicité VL": fiche["periodicite_vl"],
+            "Affectation": fiche["affectation_resultats"],
             "Date début": d0,
             "AN début": an0,
             "VL début": vl0,
