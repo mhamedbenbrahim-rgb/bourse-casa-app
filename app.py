@@ -415,16 +415,10 @@ def render_opcvm():
         "Affectation des résultats", affectations, default=affectations,
     )
 
-    benchmarks = sorted(derniere_fiche["indice_benchmark"].dropna().unique())
-    sel_benchmarks = st.sidebar.multiselect(
-        "Indice Benchmark", benchmarks, default=benchmarks,
-    )
-
     fonds_filtres = derniere_fiche[
         derniere_fiche["classification"].isin(sel_classifications)
         & derniere_fiche["periodicite_vl"].isin(sel_periodicites)
         & derniere_fiche["affectation_resultats"].isin(sel_affectations)
-        & derniere_fiche["indice_benchmark"].isin(sel_benchmarks)
     ]
     st.sidebar.caption(f"{len(fonds_filtres)} OPCVM correspondent aux filtres.")
 
