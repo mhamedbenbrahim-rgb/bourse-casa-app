@@ -363,7 +363,7 @@ def load_opcvm_data(path: str) -> pd.DataFrame:
     con = sqlite3.connect(path)
     df = pd.read_sql_query(
         f'SELECT p.date, p.code_isin, f.opcvm, f.societe_gestion, f.classification, '
-        f'f.periodicite_vl, f.affectation_resultats, p.an, p.vl '
+        f'f.periodicite_vl, f.affectation_resultats, f.indice_benchmark, p.an, p.vl '
         f'FROM "{OPCVM_TABLE}" p JOIN fonds f ON f.code_isin = p.code_isin '
         f'WHERE p.vl IS NOT NULL',
         con,
@@ -415,10 +415,16 @@ def render_opcvm():
         "Affectation des résultats", affectations, default=affectations,
     )
 
+    benchmarks = sorted(derniere_fiche["indice_benchmark"].dropna().unique())
+    sel_benchmarks = st.sidebar.multiselect(
+        "Indice Benchmark", benchmarks, default=benchmarks,
+    )
+
     fonds_filtres = derniere_fiche[
         derniere_fiche["classification"].isin(sel_classifications)
         & derniere_fiche["periodicite_vl"].isin(sel_periodicites)
         & derniere_fiche["affectation_resultats"].isin(sel_affectations)
+        & derniere_fiche["indice_benchmark"].isin(sel_benchmarks)
     ]
     st.sidebar.caption(f"{len(fonds_filtres)} OPCVM correspondent aux filtres.")
 
@@ -484,6 +490,7 @@ def render_opcvm():
             "Classification": fiche["classification"],
             "Périodicité VL": fiche["periodicite_vl"],
             "Affectation": fiche["affectation_resultats"],
+            "Benchmark": fiche["indice_benchmark"],
             "Date début": d0,
             "AN début": an0,
             "VL début": vl0,
