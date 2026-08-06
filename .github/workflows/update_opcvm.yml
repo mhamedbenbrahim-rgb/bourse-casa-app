@@ -3,7 +3,7 @@ name: Mise à jour quotidienne OPCVM (ASFIM)
 on:
   schedule:
     # Tous les jours à 20h00 UTC (après la publication ASFIM du soir)
-    - cron: "0 20 * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:      # permet aussi le lancement manuel depuis GitHub
 
 permissions:
