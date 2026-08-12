@@ -556,6 +556,55 @@ def render_opcvm():
         "dernière valeur disponible avant cette date)."
     )
 
+    st.divider()
+    st.subheader("📥 Export de l'historique complet d'un OPCVM")
+
+    noms_tous = sorted(derniere_fiche["opcvm"].unique())
+    isin_par_nom_tous: dict[str, list[str]] = {}
+    for isin, nom in derniere_fiche["opcvm"].items():
+        isin_par_nom_tous.setdefault(nom, []).append(isin)
+
+    c_fonds, c_plage = st.columns([1, 2])
+    with c_fonds:
+        nom_export = st.selectbox("OPCVM", noms_tous, key="export_fonds")
+    with c_plage:
+        plage_export = st.date_input(
+            "Intervalle à exporter",
+            value=(default_start, date_max),
+            min_value=date_min, max_value=date_max,
+            key="export_plage",
+        )
+
+    if isinstance(plage_export, tuple) and len(plage_export) == 2:
+        exp_debut, exp_fin = plage_export
+        if exp_debut > exp_fin:
+            st.error("La date de début doit précéder la date de fin.")
+        else:
+            isin_export = isin_par_nom_tous[nom_export][0]
+            hist = data[
+                (data["code_isin"] == isin_export)
+                & (data["date"] >= pd.Timestamp(exp_debut))
+                & (data["date"] <= pd.Timestamp(exp_fin))
+            ][["date", "an", "vl"]].sort_values("date").rename(
+                columns={"date": "Date", "an": "AN", "vl": "VL"}
+            )
+            hist["Date"] = hist["Date"].dt.date
+
+            if hist.empty:
+                st.info("Aucune VL/AN publiée pour ce fonds sur cette période.")
+            else:
+                st.caption(f"{len(hist)} date(s) trouvée(s) pour **{nom_export}**.")
+                st.dataframe(hist, use_container_width=True, height=min(400, 60 + 35 * len(hist)))
+                st.download_button(
+                    "⬇️ Exporter l'historique (CSV)",
+                    hist.to_csv(index=False).encode("utf-8-sig"),
+                    file_name=f"historique_{nom_export}_{exp_debut}_{exp_fin}.csv",
+                    mime="text/csv",
+                    key="export_historique_btn",
+                )
+    else:
+        st.info("Choisissez une date de début et une date de fin.")
+
 
 # ----------------------------------------------------------------------------
 # Sélecteur de module
